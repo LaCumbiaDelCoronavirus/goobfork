@@ -57,7 +57,7 @@ public sealed class TTVSystem : SharedTTVSystem
         if (_timer < TimerDelay)
             return;
 
-        _timer -= TimerDelay;
+        _timer = 0;
 
         var ttvQuery = EntityQueryEnumerator<TTVComponent, ItemSlotsComponent>();
         while (ttvQuery.MoveNext(out var uid, out var ttvComponent, out var slotsComponent))
