@@ -35,29 +35,28 @@ public sealed class TTVSystem : SharedTTVSystem
     }
 
     private void UpdateAppearance(Entity<TTVComponent> ttv, ref AppearanceChangeEvent args)
-        => UpdateAppearance((ttv.Owner, ttv.Comp, null, null));
+        => UpdateAppearance((ttv.Owner, null, null));
 
-    private void UpdateAppearance(Entity<TTVComponent, ItemSlotsComponent?, SpriteComponent?> ttv)
+    private void UpdateAppearance(EntityUid ttv)
+        => UpdateAppearance((ttv, null, null));
+
+    private void UpdateAppearance(Entity<ItemSlotsComponent?, SpriteComponent?> ttv)
     {
-        if (!Resolve(ttv, ref ttv.Comp2, logMissing: false) || !Resolve(ttv, ref ttv.Comp3, logMissing: false))
+        if (!Resolve(ttv, ref ttv.Comp1, logMissing: false) || !Resolve(ttv, ref ttv.Comp2, logMissing: false))
             return;
 
-        var ttvComponent = ttv.Comp1;
-        var slotsComponent = ttv.Comp2;
-        var spriteComponent = ttv.Comp3;
-
-        var ttvSpriteEntity = new Entity<SpriteComponent?>(ttv, spriteComponent);
+        var slotsComponent = ttv.Comp1;
+        var ttvSpriteEntity = new Entity<SpriteComponent?>(ttv, ttv.Comp2);
 
         foreach (var (slotId, slot) in slotsComponent.Slots)
         {
             var slotOccupied = slot.HasItem;
             _spriteSystem.LayerSetVisible(ttvSpriteEntity, slotId, slotOccupied);
+
             if (!slotOccupied || !TTVCompatibleQuery.TryComp(slot.Item, out var itemCompatibleComponent))
                 continue;
 
             _spriteSystem.LayerSetSprite(ttvSpriteEntity, slotId, new SpriteSpecifier.Rsi(itemCompatibleComponent.InsertedTexture!.Value, itemCompatibleComponent.InsertedState));
-            _spriteSystem.LayerSetOffset(ttvSpriteEntity, slotId, ttvComponent.SpriteOffsets.GetValueOrDefault(slotId));
-
             Log.Debug($"Changed offset of {slotId}, on {ToPrettyString(ttvSpriteEntity)}");
         }
     }

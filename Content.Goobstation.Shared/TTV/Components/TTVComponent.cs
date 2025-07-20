@@ -20,11 +20,13 @@ public sealed partial class TTVComponent : Component
     /// <summary>Sound when opening or closing the TTV.</summary>
     [DataField]
     public SoundSpecifier ToggleSound = new SoundCollectionSpecifier("valveSqueak");
-
-    [DataField]
-    public Dictionary<string, Vector2> SpriteOffsets { get; private set; }
 }
 
 /// <summary>Raised on a gas tank to check whether it can react.</summary>
 [ByRefEvent]
 public record struct TTVTankUpdateAttemptEvent(EntityUid Tank, bool Cancelled = false);
+
+public enum TTVLayers : byte
+{
+    Valve,
+}

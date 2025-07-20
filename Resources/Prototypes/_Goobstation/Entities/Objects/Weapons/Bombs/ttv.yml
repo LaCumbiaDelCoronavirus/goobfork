@@ -6,13 +6,15 @@
   components:
   - type: Sprite
     sprite: _Goobstation/Objects/Weapons/Bombs/ttv.rsi
-    state: valve
+    layers:
+    - map: ["left"]
+    - state: valve
+      map: ["enum.TTVLayers.Valve"]
+    - map: ["right"]
+      offset: -0.48,0
   - type: Item
     size: Ginormous
   - type: TTV
-    spriteOffsets:
-      left: 0,0
-      right: -0.48,0
   - type: UseDelay
     delay: 1
   - type: Explosive
