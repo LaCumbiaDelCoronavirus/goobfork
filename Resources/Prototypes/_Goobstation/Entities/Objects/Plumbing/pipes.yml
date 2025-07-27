@@ -64,6 +64,22 @@
 
 - type: entity
   parent: FluidPipeBase
+  id: FluidPipeStraight
+  suffix: Straight
+  components:
+  - type: NodeContainer
+    nodes:
+      pipe:
+        !type:PlumbingNode
+        nodeGroupID: Pipe
+        pipeDirection: Longitudinal
+  - type: Sprite
+    layers:
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: pipeStraight
+
+- type: entity
+  parent: FluidPipeBase
   id: FluidPipeBend
   suffix: Bend
   components:
@@ -75,8 +91,8 @@
         pipeDirection: SWBend
   - type: Sprite
     layers:
-      - map: [ "enum.PipeVisualLayers.Pipe" ]
-        state: pipeBend
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: pipeBend
 
 - type: entity
   parent: FluidPipeBase
