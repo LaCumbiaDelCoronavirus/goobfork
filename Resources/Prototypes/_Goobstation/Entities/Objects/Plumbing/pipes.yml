@@ -4,38 +4,20 @@
   parent: BaseItem
   id: FluidPipeBase
   name: fluid pipe
-  description: A highly efficient pressure-controlled fluid conduit powered by cosmic background radiation.
+  description: A steel fluid conduit.
   placement:
     mode: SnapgridCenter
   components:
   - type: Visibility
     layer: 1
+  - type: SubFloorHide
   - type: Item
     size: Normal
-  - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong # maybe just make this Metallic
+
   - type: Transform
     anchored: true
-  - type: SubFloorHide
-  - type: CollideOnAnchor
-  - type: PipeAppearance
   - type: Anchorable
   - type: Rotatable
-  - type: Destructible
-    thresholds:
-    - trigger:
-        !type:DamageTrigger
-        damage: 120
-      behaviors:
-      - !type:DoActsBehavior
-        acts: ["Destruction"]
-  - type: Sprite
-    sprite: Structures/Piping/Atmospherics/pipe.rsi
-    drawdepth: ThinPipe
-    visible: false
-  - type: Appearance
-  - type: PipeColorVisuals
   - type: NodeContainer
   - type: Tag
     tags:
@@ -45,6 +27,27 @@
   - type: Physics
     canCollide: false
     bodyType: static
+  - type: CollideOnAnchor
+
+  - type: Damageable
+    damageContainer: StructuralInorganic
+    damageModifierSet: StructuralMetallicStrong # maybe just make this Metallic
+
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 120
+      behaviors:
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+
+  - type: Sprite
+    sprite: Structures/Piping/Atmospherics/pipe.rsi
+    drawdepth: ThinPipe
+    visible: false
+  - type: Appearance
+
   - type: EmitSoundOnPickup
     sound:
       path: /Audio/_Goobstation/Items/handling/wrench_pickup.ogg
@@ -61,6 +64,40 @@
 
 - type: entity
   parent: FluidPipeBase
+  id: FluidPipeBend
+  suffix: Bend
+  components:
+  - type: NodeContainer
+    nodes:
+      pipe:
+        !type:PlumbingNode
+        nodeGroupID: Pipe
+        pipeDirection: SWBend
+  - type: Sprite
+    layers:
+      - map: [ "enum.PipeVisualLayers.Pipe" ]
+        state: pipeBend
+
+- type: entity
+  parent: FluidPipeBase
+  id: FluidPipeTJunction
+  suffix: TJunction
+  components:
+  - type: Transform
+    noRot: true
+  - type: NodeContainer
+    nodes:
+      plumbing:
+        !type:PlumbingNode
+        nodeGroupID: Plumbing
+        pipeDirection: TSouth
+  - type: Sprite
+    layers:
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: pipeTJunction
+
+- type: entity
+  parent: FluidPipeBase
   id: FluidPipeFourway
   suffix: Fourway
   components:
@@ -74,5 +111,6 @@
         pipeDirection: Fourway
   - type: Sprite
     layers:
-    - state: pipeFourway
-      map: [ "enum.PipeVisualLayers.Pipe" ]
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: pipeFourway
+
