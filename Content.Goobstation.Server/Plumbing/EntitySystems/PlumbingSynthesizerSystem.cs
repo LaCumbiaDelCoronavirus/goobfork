@@ -3,7 +3,6 @@ using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.Components;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Shared.Chemistry.Components;
-using Content.Shared.Chemistry.EntitySystems;
 using Robust.Shared.Prototypes;
 
 namespace Content.Goobstation.Server.Plumbing.EntitySystems;
@@ -27,10 +26,8 @@ public sealed class PlumbingSynthesizerSystem : EntitySystem
             return;
 
         var netSolution = net.Solution;
-        net.QueuedInput.AddSolution(
-            new Solution(synthesizerComponent.ProducedReagent, FixedPoint2.Min(netSolution.MaxVolume - netSolution.Volume, synthesizerComponent.Rate * args.DeltaTime)),
-            _prototypeManager
+        net.QueueInput(
+            new Solution(synthesizerComponent.ProducedReagent, FixedPoint2.Min(netSolution.MaxVolume - netSolution.Volume, synthesizerComponent.Rate * args.DeltaTime))
         );
-        //synthesizerComponent.ProducedReagent, FixedPoint2.Min(netSolution.MaxVolume - netSolution.Volume, synthesizerComponent.Rate * args.DeltaTime)
     }
 }

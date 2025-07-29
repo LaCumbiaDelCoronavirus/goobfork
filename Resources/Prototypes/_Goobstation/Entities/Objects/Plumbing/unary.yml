@@ -1,7 +1,7 @@
 - type: entity
   parent: FluidPipeBase
   abstract: true
-  id: FluidUnaryBase
+  id: PlumbingDeviceBase
   placement:
     mode: SnapgridCenter
   components:
@@ -92,7 +92,7 @@
     solution: tank
 
 - type: entity
-  parent: [ BaseMachinePowered, SmallConstructibleMachine ]
+  parent: PlumbingDeviceBase
   id: PlumbingDrain
   name: fluid sink
   description: A scary-looking vacuum drain. Hm.

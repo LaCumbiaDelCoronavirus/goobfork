@@ -1,3 +1,4 @@
+using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Chemistry.Reagent;
 using Robust.Shared.Prototypes;
 
@@ -15,5 +16,5 @@ public sealed partial class PlumbingSynthesizerComponent : Component
     ///     The rate at which the <see cref="ProducedReagent"/> is synthesized.
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public float Rate;
+    public FixedPoint2 Rate;
 }

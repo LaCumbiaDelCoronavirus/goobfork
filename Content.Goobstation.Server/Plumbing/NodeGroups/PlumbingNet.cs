@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.EntitySystems;
 using Content.Server.NodeContainer.NodeGroups;
@@ -18,20 +19,51 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
     [ViewVariables(VVAccess.ReadWrite)]
     public Solution Solution = new() { CanReact = false };
 
+    /// <summary>
+    ///     The amount of fluid in this net, at the start of a plumbing tick, but before
+    ///         any machines process.
+    /// </summary>
+    public FixedPoint2 CachedVolume;
+    /// <summary>
+    ///     The ratio of fluid in this net to it's maximum capacity (0 to 1), at the
+    ///         start of a plumbing tick, but before any machines process.
+    /// </summary>
     public float CachedFillFraction;
-    public float CachedAvailableVolume;
 
+    // Although literal `Queue`s would be nicer, lists are faster to iterate(?) through and that's the only thing we're doing.
     /// <summary>
-    ///     A very large solution that will be removed from this net's solution and emptied, the next time this is processed.
+    ///     Basically, a list of solutions that will be added, from nowhere, to this net. They should NOT come from another
+    ///         pipenet.
     /// </summary>
-    public Solution QueuedOutput = new(int.MaxValue) { CanReact = false };
+    public List<Solution> QueuedInputs = new();
     /// <summary>
-    ///     A very large solution that will be added to this net's solution and emptied, the next time this is processed.
+    ///     Basically, a list of solutions that will be moved from this net and either into another net, or disposed of.
+    ///         This is actually a list of <see cref="PlumbingDeviceTransferData"/> that accomplish that.
     /// </summary>
-    public Solution QueuedInput = new(int.MaxValue) { CanReact = false };
+    public List<PlumbingDeviceTransferData> QueuedTransfers = new();
 
     [ViewVariables(VVAccess.ReadOnly)]
     public float AvailableVolume => Solution.AvailableVolume.Float();
+
+    /// <summary>
+    ///     Queue a split of solution from this net to another solution.
+    /// </summary>
+    // This method exists for if anyone wants to change the implementation for how transfers are queued.
+    // ..because otherwise you'd have to change everything that adds an transfer, rather than just this method.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void QueueTransfer(Solution originSolution, Solution? targetSolution)
+        => QueuedTransfers.Add(new PlumbingDeviceTransferData(originSolution, targetSolution));
+
+    /// <inheritdoc cref="QueueTransfer(Solution, Solution?)"/>
+    // Ditto.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void QueueTransfer(Solution originSolution, PlumbingNet? targetNet)
+        => QueuedTransfers.Add(new PlumbingDeviceTransferData(originSolution, targetNet?.Solution));
+
+    // Ditto.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void QueueInput(Solution solution)
+        => QueuedInputs.Add(solution);
 
     public override void Initialize(Node sourceNode, IEntityManager entMan)
     {
@@ -75,12 +107,12 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
             if (newGroup.Key is not PlumbingNet net)
                 continue;
 
-            // The fraction of fluid that, from our net, this new net gets.
-            var fraction = net.Solution.MaxVolume / Solution.MaxVolume;
             net.Solution.AddSolution(cached.SplitSolution(net.Solution.MaxVolume), _prototypeManager);
         }
     }
 
     public override string GetDebugData()
-        => @$"Volume: {(float) Solution.Volume:G3} / {(float) Solution.MaxVolume:G3}";
+        => @$"Volume: {(float) Solution.Volume} / {(float) Solution.MaxVolume}
+        Cached Volume: {(float) CachedVolume}
+        Cached FillFraction{CachedFillFraction}";
 }
