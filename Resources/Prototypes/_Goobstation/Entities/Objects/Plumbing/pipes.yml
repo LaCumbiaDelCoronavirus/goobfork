@@ -43,7 +43,7 @@
         acts: ["Destruction"]
 
   - type: Sprite
-    sprite: Structures/Piping/Atmospherics/pipe.rsi
+    sprite: _Goobstation/Structures/Piping/fluid_pipe.rsi
     drawdepth: ThinPipe
     visible: false
   - type: Appearance
@@ -71,12 +71,69 @@
     nodes:
       pipe:
         !type:PlumbingNode
-        nodeGroupID: Pipe
+        nodeGroupID: Plumbing
         pipeDirection: Longitudinal
   - type: Sprite
     layers:
     - map: [ "enum.PipeVisualLayers.Pipe" ]
-      state: pipeStraight
+      state: straight
+
+- type: entity
+  parent: FluidPipeStraight
+  id: FluidPipeStraightViewable
+  name: window fluid pipe
+  description: A steel fluid conduit with a snazzy window to look inside with.
+  suffix: Straight, Viewable
+  components:
+  - type: Sprite
+    layers:
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: straight-viewable
+    - map: ["enum.SolutionContainerLayers.Fill"]
+      state: f-straight-viewable-1
+      visible: false
+  - type: PlumbingDevice # :trollface:
+  - type: PlumbingSolutionReplicator
+    solution: pipe
+    node: pipe
+  - type: SolutionContainerManager
+    solutions:
+      pipe:
+        maxVol: 50
+  - type: ExaminableSolution
+    solution: pipe
+  - type: SolutionContainerVisuals
+    solutionName: pipe
+    maxFillLevels: 1
+    fillBaseName: f-straight-viewable-
+
+- type: entity
+  parent: FluidPipeStraight
+  id: FluidPipeStraightDebug
+  name: window fluid pipe
+  description: A steel fluid conduit with a snazzy window to look inside with.
+  suffix: DEBUG
+  components:
+  - type: Sprite
+    layers:
+    - map: [ "enum.PipeVisualLayers.Pipe" ]
+      state: straight-viewable
+    - map: ["enum.SolutionContainerLayers.Fill"]
+      state: f-straight-viewable-1
+      visible: true
+  - type: PlumbingSolutionReplicator
+    solution: pipe
+    node: pipe
+  - type: SolutionContainerManager
+    solutions:
+      pipe:
+        maxVol: 50
+  - type: ExaminableSolution
+    solution: pipe
+  - type: SolutionContainerVisuals
+    solutionName: pipe
+    maxFillLevels: 1
+    fillBaseName: f-straight-viewable-
 
 - type: entity
   parent: FluidPipeBase
@@ -87,20 +144,18 @@
     nodes:
       pipe:
         !type:PlumbingNode
-        nodeGroupID: Pipe
-        pipeDirection: SWBend
+        nodeGroupID: Plumbing
+        pipeDirection: SEBend
   - type: Sprite
     layers:
     - map: [ "enum.PipeVisualLayers.Pipe" ]
-      state: pipeBend
+      state: elbow
 
 - type: entity
   parent: FluidPipeBase
   id: FluidPipeTJunction
   suffix: TJunction
   components:
-  - type: Transform
-    noRot: true
   - type: NodeContainer
     nodes:
       plumbing:
@@ -110,7 +165,7 @@
   - type: Sprite
     layers:
     - map: [ "enum.PipeVisualLayers.Pipe" ]
-      state: pipeTJunction
+      state: junction
 
 - type: entity
   parent: FluidPipeBase
@@ -128,5 +183,5 @@
   - type: Sprite
     layers:
     - map: [ "enum.PipeVisualLayers.Pipe" ]
-      state: pipeFourway
+      state: quad
 

@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.EntitySystems;
 using Content.Server.NodeContainer.NodeGroups;
 using Content.Shared.Chemistry.Components;
@@ -15,11 +16,21 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
     private PlumbingSystem? _plumbingSystem;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    public Solution Solution = new();
+    public Solution Solution = new() { CanReact = false };
 
     public float CachedFillFraction;
     public float CachedAvailableVolume;
 
+    /// <summary>
+    ///     A very large solution that will be removed from this net's solution and emptied, the next time this is processed.
+    /// </summary>
+    public Solution QueuedOutput = new(int.MaxValue) { CanReact = false };
+    /// <summary>
+    ///     A very large solution that will be added to this net's solution and emptied, the next time this is processed.
+    /// </summary>
+    public Solution QueuedInput = new(int.MaxValue) { CanReact = false };
+
+    [ViewVariables(VVAccess.ReadOnly)]
     public float AvailableVolume => Solution.AvailableVolume.Float();
 
     public override void Initialize(Node sourceNode, IEntityManager entMan)
@@ -46,30 +57,30 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
     {
         base.RemoveNode(node);
 
-        // if the node is simply being removed into a separate group, we do nothing, as gas redistribution will be
-        // handled by AfterRemake(). But if it is being deleted, we actually want to remove the gas stored in this node.
-        // EDIT: Fuck that. We just do THIS.
-        if (node is not PlumbingNode plumbing)
+        // This should only handle nodes that aren't handled by AfterRemake.
+        if (!node.Deleting || node is not PlumbingNode plumbing)
             return;
 
         Solution.SplitSolution(plumbing.Capacity);
-        //Air.Multiply(1f - pipe.Volume / Air.Volume);
         Solution.MaxVolume -= plumbing.Capacity;
     }
 
     public override void AfterRemake(IEnumerable<IGrouping<INodeGroup?, Node>> newGroups)
     {
         _plumbingSystem?.RemovePlumbingNet(this);
-        var splitVolume = Solution.MaxVolume / newGroups.Count();
 
+        var cached = Solution.Clone();
         foreach (var newGroup in newGroups)
         {
-            if (newGroup.Key is not PlumbingNet newNet)
+            if (newGroup.Key is not PlumbingNet net)
                 continue;
 
-            newNet.Solution.AddSolution(Solution.SplitSolution(splitVolume), _prototypeManager);
+            // The fraction of fluid that, from our net, this new net gets.
+            var fraction = net.Solution.MaxVolume / Solution.MaxVolume;
+            net.Solution.AddSolution(cached.SplitSolution(net.Solution.MaxVolume), _prototypeManager);
         }
-
-        Solution.MaxVolume = splitVolume;
     }
+
+    public override string GetDebugData()
+        => @$"Volume: {(float) Solution.Volume:G3} / {(float) Solution.MaxVolume:G3}";
 }

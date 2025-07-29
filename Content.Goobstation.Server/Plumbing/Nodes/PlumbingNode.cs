@@ -46,8 +46,8 @@ public partial class PlumbingNode : Node, IRotatableNode
     [ViewVariables]
     public Solution? NetSolution => PlumbingNet?.Solution;
 
-    [DataField("capacity")]
-    public FixedPoint2 Capacity { get; set; } = 50f;
+    [DataField]
+    public FixedPoint2 Capacity { get; set; } = 10f;
 
     public override void Initialize(EntityUid owner, IEntityManager entMan)
     {
