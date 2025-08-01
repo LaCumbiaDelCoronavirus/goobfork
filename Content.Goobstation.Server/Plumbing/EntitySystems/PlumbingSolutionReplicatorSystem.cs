@@ -20,7 +20,7 @@ public sealed class PlumbingSolutionReplicatorSystem : EntitySystem
         base.Initialize();
 
         SubscribeLocalEvent<PlumbingSolutionReplicatorComponent, NodeGroupsRebuilt>(OnReplicatorNodesRebuilt);
-        SubscribeLocalEvent<PlumbingSolutionReplicatorComponent, PlumbingDeviceProcessEvent>(OnProcess);
+        //SubscribeLocalEvent<PlumbingSolutionReplicatorComponent, PlumbingDeviceProcessEvent>(OnProcess);
     }
 
     private void OnProcess(Entity<PlumbingSolutionReplicatorComponent> entity, ref PlumbingDeviceProcessEvent args)

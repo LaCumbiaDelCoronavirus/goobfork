@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.Components;
+using Content.Goobstation.Server.Plumbing.Extensions;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Shared.Chemistry.Components;
 using Robust.Shared.Prototypes;
@@ -23,10 +24,6 @@ public sealed class PlumbingSystem : EntitySystem
     private Stopwatch _processingStopwatch = new();
 
     private HashSet<PlumbingNet> _plumbingNets = new();
-
-    // Value is what amount of fluid is pulled/pushed.
-    private ConcurrentDictionary<PlumbingNet, Solution> _netPulls = new();
-    private ConcurrentDictionary<PlumbingNet, Solution> _netPushes = new();
 
     private EntityQuery<PlumbingDeviceComponent> _plumbingDeviceQuery;
 
@@ -69,17 +66,11 @@ public sealed class PlumbingSystem : EntitySystem
     {
         _processingStopwatch.Restart();
 
-        _netPulls.Clear();
-        _netPushes.Clear();
-
         Parallel.ForEach(_plumbingNets, net =>
         {
             // Not like i care.
             net.QueuedInputs.Clear();
             net.QueuedTransfers.Clear();
-
-            net.CachedVolume = net.Solution.Volume;
-            net.CachedFillFraction = net.Solution.FillFraction;
         });
 
         var plumbingDeviceEnumerator = EntityQueryEnumerator<PlumbingDeviceComponent>();
@@ -92,6 +83,9 @@ public sealed class PlumbingSystem : EntitySystem
 
         // I AM THE GOD OF HELLFIRE
         // First just handle the thingamajigs that spawn in fluid from nowhere instead of transferring it.
+
+        // Also holy shit, can't we just cache heatcapacities somewhere? Dictionaries would be
+        // *very* good for this use-case.
         Parallel.ForEach(_plumbingNets, net =>
         {
             var c = net.QueuedInputs.Count;
@@ -99,14 +93,10 @@ public sealed class PlumbingSystem : EntitySystem
                 net.Solution.AddSolution(net.QueuedInputs[i], _prototypeManager);
         });
 
-        // This handles fluid that this pipenet is losing.
-        // help me.
-
-        // This crits the update-order-trolling.
+        // This handles fluid that this pipenet is losing in whatever way, unless some smartass directly split from the pipenet's solution.
+        //
         foreach (var net in _plumbingNets)
         {
-            var originallyAvailableVolume = net.AvailableVolume;
-
             var queuedTransfers = net.QueuedTransfers;
             var c = queuedTransfers.Count;
 
@@ -121,14 +111,22 @@ public sealed class PlumbingSystem : EntitySystem
                 continue;
             }
 
-            var fractionalVolumeFilled = (totalRequested > 0f) ? MathF.Min(1f, originallyAvailableVolume / totalRequested) : 0f;
+            // The ratio for pulling fluid from this pipenet, so that we can evenly distribute it across *all* devices pulling from it.
+
+            // That means that, for two of the exact same pump, both pulling an amount of fluid that is exactly as much as in this pipenet,
+            //      both will pull half of the pipenet no matter which updates first.
+            var volumeFulfillmentRatio = (totalRequested > 0f) ? MathF.Min(1f, net.AvailableVolume / totalRequested) : 0f;
+
             for (int i = 0; i < c; ++i)
             {
                 var transfer = queuedTransfers[i];
-                var transferredSolution = transfer.MovedSolution;
-                transferredSolution.ScaleSolution(fractionalVolumeFilled);
 
-                // Uh good enough.
+                // Distribute the volume that something gets to transfer, depending on how much is currently being transferred out of the pipenet.
+                var transferredSolution = transfer.MovedSolution;
+                // Just scale it, i dont wanna recalc heatcap if we're going to do it right now
+                transferredSolution.ScaleSolutionAndHeatCapacity(volumeFulfillmentRatio);
+
+                // This is good enough,, TODO: make this reagentquantity or something IDFK.
                 net.Solution.SplitSolution(transferredSolution.Volume);
                 if (transfer.TargetSolution is { } target)
                     target.AddSolution(transferredSolution, _prototypeManager);
