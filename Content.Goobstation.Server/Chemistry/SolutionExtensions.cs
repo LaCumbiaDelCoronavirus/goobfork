@@ -35,7 +35,8 @@ public static class SolutionExtensions
     ///         However, does not change the solution being split.
     /// </summary>
     /// <remarks>
-    ///     Cheaper performance-wise.
+    ///     Cheaper performance-wise. Heat-capacity isn't re-calculated,
+    ///         but multiplied to basically achieve the same one.
     /// </remarks>
     public static Solution CopySplitSolution(this Solution solution, FixedPoint2 toTake, IPrototypeManager? prototypeManager = null)
     {
@@ -45,7 +46,9 @@ public static class SolutionExtensions
         if (toTake >= solution.Volume)
             return solution.Clone();
 
+        var originalVolume = solution.Volume;
         var effVol = solution.Volume.Value;
+
         var newSolution = new Solution(solution.Contents.Count) { Temperature = solution.Temperature };
 
         var remaining = (long) toTake.Value;
@@ -82,7 +85,11 @@ public static class SolutionExtensions
         DebugTools.Assert(remaining >= 0);
         DebugTools.Assert(remaining == 0 || solution.Volume == FixedPoint2.Zero);
 
-        newSolution.UpdateHeatCapacity(prototypeManager);
+        // FP imprecision bait #1
+        var takenRatio = 1 - ((float) taken / (float) originalVolume);
+        ForcedSetHeatCapacity(solution, ForcedGetHeatCapacity(solution) * takenRatio);
+        //newSolution.UpdateHeatCapacity(prototypeManager);
+
         return newSolution;
     }
 
@@ -131,6 +138,7 @@ public static class SolutionExtensions
             }
         }
 
+        // FP imprecision bait #2
         ForcedSetHeatCapacity(solution, ForcedGetHeatCapacity(solution) * scale);
     }
 }

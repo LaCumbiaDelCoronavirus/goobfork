@@ -2,6 +2,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.EntitySystems;
+using Content.Goobstation.Server.Plumbing.Extensions;
 using Content.Server.NodeContainer.NodeGroups;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.NodeContainer;
@@ -101,13 +102,22 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
     {
         _plumbingSystem?.RemovePlumbingNet(this);
 
+        // Also. This doesn't really get properly split because
+        // ?? though i know it doesn't get equally split.
+
+        // Try having 2 pipenets of differing volume with fluid
+        // and open a valve. Total amount of juice still exists
+        // however it's not equally split. Ok whatever.
         var cached = Solution.Clone();
         foreach (var newGroup in newGroups)
         {
             if (newGroup.Key is not PlumbingNet net)
                 continue;
 
-            net.Solution.AddSolution(cached.SplitSolution(net.Solution.MaxVolume), _prototypeManager);
+            var allocated = cached.Clone();
+            allocated.ScaleSolutionAndHeatCapacity((float) cached.MaxVolume / (float) net.Solution.MaxVolume);
+
+            net.Solution.AddSolution(allocated, _prototypeManager);
         }
     }
 

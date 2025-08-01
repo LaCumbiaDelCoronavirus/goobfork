@@ -94,7 +94,7 @@ public sealed class PlumbingSystem : EntitySystem
         });
 
         // This handles fluid that this pipenet is losing in whatever way, unless some smartass directly split from the pipenet's solution.
-        //
+        // !! Also we don't really care if how much the machine is requesting is more than how much can actually be physically pulled. :trollface:
         foreach (var net in _plumbingNets)
         {
             var queuedTransfers = net.QueuedTransfers;
@@ -115,7 +115,7 @@ public sealed class PlumbingSystem : EntitySystem
 
             // That means that, for two of the exact same pump, both pulling an amount of fluid that is exactly as much as in this pipenet,
             //      both will pull half of the pipenet no matter which updates first.
-            var volumeFulfillmentRatio = (totalRequested > 0f) ? MathF.Min(1f, net.AvailableVolume / totalRequested) : 0f;
+            var volumeFulfillmentRatio = (totalRequested > 0f) ? MathF.Min(1f, (float) net.Solution.Volume / totalRequested) : 0f;
 
             for (int i = 0; i < c; ++i)
             {
@@ -124,6 +124,7 @@ public sealed class PlumbingSystem : EntitySystem
                 // Distribute the volume that something gets to transfer, depending on how much is currently being transferred out of the pipenet.
                 var transferredSolution = transfer.MovedSolution;
                 // Just scale it, i dont wanna recalc heatcap if we're going to do it right now
+                // FP imprecision bait #1.5
                 transferredSolution.ScaleSolutionAndHeatCapacity(volumeFulfillmentRatio);
 
                 // This is good enough,, TODO: make this reagentquantity or something IDFK.
