@@ -12,8 +12,8 @@ namespace Content.Goobstation.Server.Ordnance.TTV;
 public sealed class TTVSystem : SharedTTVSystem
 {
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-    [Dependency] AtmosphereSystem _atmosphereSystem = default!;
-    [Dependency] ExplosionSystem _explosionSystem = default!;
+    [Dependency] private readonly AtmosphereSystem _atmosphereSystem = default!;
+    [Dependency] private readonly ExplosionSystem _explosionSystem = default!;
 
     // Timers are the same as the ones from GasTankSystem
     private const float TimerDelay = 0.5f;

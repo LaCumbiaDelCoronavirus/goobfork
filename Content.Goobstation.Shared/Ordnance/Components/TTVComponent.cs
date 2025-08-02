@@ -18,6 +18,10 @@ public sealed partial class TTVComponent : Component
     /// <summary>Sound when opening or closing the TTV.</summary>
     [DataField]
     public SoundSpecifier ToggleSound = new SoundCollectionSpecifier("valveSqueak");
+
+    /// <summary>Map key used for this TTV when displaying tanks on it, while being worn.</summary>
+    [DataField]
+    public string ClothingMapKey = "ttv";
 }
 
 /// <summary>Raised on a gas tank to check whether it can react.</summary>

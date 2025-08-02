@@ -14,6 +14,7 @@
     - map: ["right"]
       offset: -0.48,0
   - type: Item
+    heldPrefix: ttv
     size: Ginormous
   - type: TTV
   - type: UseDelay
@@ -34,6 +35,20 @@
           tags:
           - GasTank
   - type: Appearance
+
+- type: entity
+  parent: TankTransferValve
+  id: TankTransferValveWearable
+  suffix: Wearable
+  components:
+  - type: Clothing
+    slots: BACK
+    sprite: _Goobstation/Objects/Weapons/Bombs/ttv.rsi
+    equippedPrefix: ttv
+    clothingVisuals:
+      backpack:
+      - map: [ "ttv" ]
+        state: ttv-BACKPACK
 
 - type: entity
   parent: TankTransferValve
