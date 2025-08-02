@@ -1,38 +1,50 @@
-using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Chemistry.Reagent;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
 
 namespace Content.Goobstation.Server.Plumbing.Extensions;
 
+public delegate ref float HeatCapacityExper(Solution solution);
+
 /// <summary>
-///     Various extensions for solutions because the original methods pissed me off.
+///     More utility methods for solutions.
 /// </summary>
 public static class SolutionExtensions
 {
     // Exception-farm 2025 if someone changes this
-    private static readonly PropertyInfo HeatCapacityProperty = typeof(Solution).GetProperty("_heatCapacity", BindingFlags.Instance | BindingFlags.NonPublic)!
+    // This is so fucking heinous
+    private static readonly FieldInfo HeatCapacityField = typeof(Solution).GetField("_heatCapacity", BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.NonPublic)!
         ?? throw new InvalidOperationException("Couldn't find private field `_heatCapacity` on type `Solution`, was it renamed to something else?");
 
-    private static readonly ParameterExpression HCRS_Sol = Expression.Parameter(typeof(Solution));
-    private static readonly ParameterExpression HCRS_Hc = Expression.Parameter(typeof(float));
+    private static readonly DynamicMethod HcfDm = new(
+        "ExposeHeatCapacity",
+        typeof(float).MakeByRefType(),
+        new[] { typeof(Solution) }, // Sol
+        typeof(SolutionExtensions).Module,
+        true
+    );
 
-    /// <summary>Action that sets a solution's heat capacity via reflection.</summary>
-    public static readonly Action<Solution, float> ForcedSetHeatCapacity = Expression.Lambda<Action<Solution, float>>(
-        Expression.Call(HCRS_Sol, HeatCapacityProperty.GetSetMethod(true)!, HCRS_Hc), HCRS_Sol, HCRS_Hc
-    ).Compile();
+    private static readonly ILGenerator HcfDmIl = HcfDm.GetILGenerator();
+    /// <summary>Exposes a solution's heat capacity in the form of a ref.</summary>
+    public static readonly HeatCapacityExper ExpHeatCapacity;
 
-    /// <summary>Action that gets a solution's heat capacity via reflection; make sure the heatcap is updated!</summary>
-    public static readonly Func<Solution, float> ForcedGetHeatCapacity = Expression.Lambda<Func<Solution, float>>(
-        Expression.Call(HCRS_Sol, HeatCapacityProperty.GetGetMethod(true)!), HCRS_Sol
-    ).Compile();
+    static SolutionExtensions()
+    {
+        HcfDmIl.Emit(OpCodes.Ldarg_0); // Sol
+        HcfDmIl.Emit(OpCodes.Ldflda, HeatCapacityField); // ref Sol
+        HcfDmIl.Emit(OpCodes.Ret); // => ref Sol
+
+        ExpHeatCapacity = HcfDm.CreateDelegate<HeatCapacityExper>();
+    }
 
     /// <summary>
     ///     Equivalent to <see cref="Solution.SplitSolution(FixedPoint2)"/>.
-    ///         However, does not change the solution being split.
+    ///         However, does not mutate the solution being split.
     /// </summary>
     /// <remarks>
     ///     Cheaper performance-wise. Heat-capacity isn't re-calculated,
@@ -85,13 +97,18 @@ public static class SolutionExtensions
         DebugTools.Assert(remaining >= 0);
         DebugTools.Assert(remaining == 0 || solution.Volume == FixedPoint2.Zero);
 
-        // FP imprecision bait #1
-        var takenRatio = 1 - ((float) taken / (float) originalVolume);
-        ForcedSetHeatCapacity(solution, ForcedGetHeatCapacity(solution) * takenRatio);
-        //newSolution.UpdateHeatCapacity(prototypeManager);
+        // FP imprecision bait #1. This is the ratio of the taken solution's volume compared to that of the original solution's volume.
+        var takenRatio = 1f - (float) (taken / originalVolume);
+
+        // As said we don't mutate anything so we just do this.
+        ExpHeatCapacity(newSolution) = ExpHeatCapacity(solution) * takenRatio;
 
         return newSolution;
     }
+
+    /// <inheritdoc cref="ScaleSolutionAndHeatCapacity(Solution, FixedPoint2)"/>
+    public static void ScaleSolutionAndHeatCapacity(this Solution solution, float scale)
+        => ScaleSolutionAndHeatCapacity(solution, FixedPoint2.New(scale));
 
     /// <summary>
     ///     Scales the amount of solution, however does not validate it.
@@ -108,7 +125,7 @@ public static class SolutionExtensions
     ///         or dirty and re-calculate heatcapacities for this afterwards.
     /// </remarks>
     /// <param name="scale">The scalar to modify the solution by.</param>
-    public static void ScaleSolutionAndHeatCapacity(this Solution solution, float scale)
+    public static void ScaleSolutionAndHeatCapacity(this Solution solution, FixedPoint2 scale)
     {
         if (scale == 1)
             return;
@@ -139,6 +156,6 @@ public static class SolutionExtensions
         }
 
         // FP imprecision bait #2
-        ForcedSetHeatCapacity(solution, ForcedGetHeatCapacity(solution) * scale);
+        ExpHeatCapacity(solution) *= (float) scale;
     }
 }

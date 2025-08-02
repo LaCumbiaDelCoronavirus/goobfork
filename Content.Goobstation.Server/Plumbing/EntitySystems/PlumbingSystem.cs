@@ -27,7 +27,7 @@ public sealed class PlumbingSystem : EntitySystem
 
     private EntityQuery<PlumbingDeviceComponent> _plumbingDeviceQuery;
 
-    public const float UpdateInterval = 1f;
+    public const float UpdateInterval = 0.5f;
     private float _updateAccumulator;
 
     public override void Initialize()
@@ -127,13 +127,14 @@ public sealed class PlumbingSystem : EntitySystem
                 // FP imprecision bait #1.5
                 transferredSolution.ScaleSolutionAndHeatCapacity(volumeFulfillmentRatio);
 
-                // This is good enough,, TODO: make this reagentquantity or something IDFK.
+                // This is good enough,, TODO: make this reagentquantity or something IDFK. So that we can have proper fluid filters etc..
                 net.Solution.SplitSolution(transferredSolution.Volume);
                 if (transfer.TargetSolution is { } target)
                     target.AddSolution(transferredSolution, _prototypeManager);
             }
         }
 
-        Log.Debug($"Took {_processingStopwatch.Elapsed.TotalMilliseconds}ms to process {_plumbingNets.Count} plumbingnets.");
+        if (_processingStopwatch.Elapsed.TotalMilliseconds >= 3)
+            Log.Warning($"Alert! Took {_processingStopwatch.Elapsed.TotalMilliseconds}ms to process {_plumbingNets.Count} plumbingnets.");
     }
 }

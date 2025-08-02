@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.EntitySystems;
 using Content.Goobstation.Server.Plumbing.Extensions;
 using Content.Server.NodeContainer.NodeGroups;
@@ -17,19 +16,15 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
     private IPrototypeManager? _prototypeManager;
     private PlumbingSystem? _plumbingSystem;
 
+    /// <summary>
+    ///     The solution that this net contains. It's <see cref="Solution.MaxVolume"/>
+    ///         will be the capacity of each node it contains, combined.
+    ///
+    ///     It's reactions are not processed and it should never be validated unless
+    ///         necessary, to save performance.
+    /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
     public Solution Solution = new() { CanReact = false };
-
-    /// <summary>
-    ///     The amount of fluid in this net, at the start of a plumbing tick, but before
-    ///         any machines process.
-    /// </summary>
-    public FixedPoint2 CachedVolume;
-    /// <summary>
-    ///     The ratio of fluid in this net to it's maximum capacity (0 to 1), at the
-    ///         start of a plumbing tick, but before any machines process.
-    /// </summary>
-    public float CachedFillFraction;
 
     // Although literal `Queue`s would be nicer, lists are faster to iterate(?) through and that's the only thing we're doing.
     /// <summary>
@@ -94,10 +89,11 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
         if (!node.Deleting || node is not PlumbingNode plumbing)
             return;
 
-        Solution.SplitSolution(plumbing.Capacity);
+        Solution.SplitSolution(plumbing.Capacity * Solution.FillFraction);
         Solution.MaxVolume -= plumbing.Capacity;
     }
 
+    // TODO: Fix this shit and make it less ass. Sure it can distribute maxvolume well enough but it shits itself trying to distribute reagents.
     public override void AfterRemake(IEnumerable<IGrouping<INodeGroup?, Node>> newGroups)
     {
         _plumbingSystem?.RemovePlumbingNet(this);
@@ -106,23 +102,26 @@ public sealed class PlumbingNet : BaseNodeGroup, INodeGroup
         // ?? though i know it doesn't get equally split.
 
         // Try having 2 pipenets of differing volume with fluid
-        // and open a valve. Total amount of juice still exists
+        // and open a valve. Total amount of juice still exists MOST of the time
         // however it's not equally split. Ok whatever.
+
         var cached = Solution.Clone();
+        var originalMaxVolume = Solution.MaxVolume;
         foreach (var newGroup in newGroups)
         {
             if (newGroup.Key is not PlumbingNet net)
                 continue;
 
             var allocated = cached.Clone();
-            allocated.ScaleSolutionAndHeatCapacity((float) cached.MaxVolume / (float) net.Solution.MaxVolume);
+            var allocatedMaxVolumeFraction = allocated.MaxVolume / originalMaxVolume;
+
+            allocated.ScaleSolutionAndHeatCapacity(allocatedMaxVolumeFraction);
+            allocated.MaxVolume *= allocatedMaxVolumeFraction;
 
             net.Solution.AddSolution(allocated, _prototypeManager);
         }
     }
 
     public override string GetDebugData()
-        => @$"Volume: {(float) Solution.Volume} / {(float) Solution.MaxVolume}
-        Cached Volume: {(float) CachedVolume}
-        Cached FillFraction{CachedFillFraction}";
+        => @$"Volume: {(float) Solution.Volume} / {(float) Solution.MaxVolume}";
 }
