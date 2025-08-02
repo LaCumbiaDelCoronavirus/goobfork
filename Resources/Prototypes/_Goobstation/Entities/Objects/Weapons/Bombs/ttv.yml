@@ -6,10 +6,11 @@
   components:
   - type: Sprite
     sprite: _Goobstation/Objects/Weapons/Bombs/ttv.rsi
+    granularLayersRendering: true
     layers:
     - map: ["left"]
-    - state: valve
-      map: ["enum.TTVLayers.Valve"]
+    - map: ["enum.TTVLayers.Valve"]
+      state: valve
     - map: ["right"]
       offset: -0.48,0
   - type: Item

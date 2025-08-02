@@ -1,14 +1,14 @@
-using Content.Goobstation.Server.TTV;
+using Content.Goobstation.Server.Ordnance.TTV;
+using Content.Goobstation.Shared.Ordnance.TTV;
 using Content.Shared.Containers.ItemSlots;
 using Robust.Client.GameObjects;
 using Robust.Shared.Containers;
 using Robust.Shared.Utility;
 
-namespace Content.Goobstation.Client.TTV;
+namespace Content.Goobstation.Client.Ordnance.TTV;
 
 public sealed class TTVSystem : SharedTTVSystem
 {
-    [Dependency] private readonly SharedAppearanceSystem _appearanceSystem = default!;
     [Dependency] private readonly SpriteSystem _spriteSystem = default!;
 
     public override void Initialize()
@@ -57,7 +57,6 @@ public sealed class TTVSystem : SharedTTVSystem
                 continue;
 
             _spriteSystem.LayerSetSprite(ttvSpriteEntity, slotId, new SpriteSpecifier.Rsi(itemCompatibleComponent.InsertedTexture!.Value, itemCompatibleComponent.InsertedState));
-            Log.Debug($"Changed offset of {slotId}, on {ToPrettyString(ttvSpriteEntity)}");
         }
     }
 

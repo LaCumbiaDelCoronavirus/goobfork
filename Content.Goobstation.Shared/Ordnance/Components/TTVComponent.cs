@@ -1,9 +1,7 @@
-using System.Numerics;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 
-namespace Content.Goobstation.Server.TTV;
-
+namespace Content.Goobstation.Server.Ordnance.TTV;
 
 /// <summary>A tank-transfer valve that can hold multiple itemslots.</summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]

@@ -53,7 +53,7 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Random;
 using Robust.Shared.Configuration;
 using Content.Shared.CCVar;
-using Content.Goobstation.Server.TTV; // Goobstation edit
+using Content.Goobstation.Server.Ordnance.TTV; // Goobstation edit
 
 namespace Content.Server.Atmos.EntitySystems
 {
