@@ -1,10 +1,7 @@
-using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Content.Goobstation.Maths.FixedPoint;
 using Content.Goobstation.Server.Plumbing.Components;
 using Content.Goobstation.Server.Plumbing.Extensions;
-using Content.Server.NodeContainer.EntitySystems;
-using Content.Shared.Chemistry.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
@@ -43,10 +40,6 @@ public sealed class PlumbingSystem : EntitySystem
     public bool RemovePlumbingNet(PlumbingNet net)
         => _plumbingNets.Remove(net);
 
-    // On a top-level this is how it looks like:
-    // 2. Go by every pipenet and cache the net's solution's FillFraction for whatever to use
-    // 2. Go by every pipenet, and add to it the output of every applied machine
-    // 3. Go by every pipenet, and steal from it according to every applied machine
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -61,7 +54,11 @@ public sealed class PlumbingSystem : EntitySystem
         Process(deltaTime);
     }
 
-    // TODO: Apply Ilya's nuclear subframe-killing solution to this.
+    // TODO: Apply Ilya's nuclear subframe-killing solution to this. It's basically totally possible or something right now i don't fucking know.
+    // On a top-level this is how it looks like:
+    // 2. Go by every pipenet and cache the net's solution's FillFraction for whatever to use
+    // 2. Go by every pipenet, and add to it the output of every applied machine
+    // 3. Go by every pipenet, and steal from it according to every applied machine
     public void Process(float deltaTime)
     {
         _processingStopwatch.Restart();
